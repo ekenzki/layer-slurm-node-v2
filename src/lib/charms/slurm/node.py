@@ -1,32 +1,35 @@
 import subprocess
 import sys
 
+#Returns the ammount of memory in MB that slurm can allocate
 def _get_mem():
+    percent = 0.93 #Percent of total memory SLURM is able to allocate
     mem =  int(subprocess.check_output("cat /proc/meminfo | grep MemTotal | awk '{print $2}'", shell=True))
-    mem = mem / 1024 * 0.93
+    mem = mem / 1024 * percent
     return int(mem)
 
+#Returns the number of NVIDIA GPUS inside the node.
 def _get_gpus():
     gpus = int(subprocess.check_output("lspci | grep -i nvidia | awk '{print $1}' | cut -d : -f 1 | sort -u | wc -l", shell=True))
     return gpus
 
+#Returns a list of cpuaffinity for each GPU. Example list: "0-11", "12-23"
 def _get_cpuaffinity():
     cpuaffinity=[]
     gpu_id = subprocess.check_output("lspci | grep -i nvidia | awk '{print $1}' | cut -d : -f 1 | sort -u",
                                         shell=True).strip().decode('ascii')
+
     if not gpu_id:
         return cpuaffinity
-    if isinstance(gpu_id,list):
-        for i in gpu_id:
-            tmp = subprocess.check_output("cat /sys/class/pci_bus/0000\\:{0}/cpulistaffinity".format(i),
-                                        shell=True).strip().decode('ascii')
-            cpuaffinity.append(tmp)
-    else:
-        tmp = subprocess.check_output("cat /sys/class/pci_bus/0000\\:{0}/cpulistaffinity".format(gpu_id),
+
+    gpu_id_list = gpu_id.split()
+    for i in gpu_id_list:
+        tmp = subprocess.check_output("cat /sys/class/pci_bus/0000\\:{0}/cpulistaffinity".format(i),
                                         shell=True).strip().decode('ascii')
         cpuaffinity.append(tmp)
     return cpuaffinity
 
+#Returns number of CPU sockets
 def _get_sockets():
     sockets = int(subprocess.check_output("lscpu | grep 'Socket(s):'  | cut -d : -f 2 | awk '{print $1}'", shell=True))
     return sockets

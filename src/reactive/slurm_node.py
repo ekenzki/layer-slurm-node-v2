@@ -9,6 +9,7 @@ from charms.slurm.helpers import SLURMCTLD_SERVICE
 from charms.slurm.helpers import create_spool_dir
 from charms.slurm.helpers import render_munge_key
 from charms.slurm.helpers import render_slurm_config
+from charms.slurm.helpers import render_gres_config
 
 from charmhelpers.core.host import service_stop
 from charmhelpers.core.host import service_pause
@@ -64,9 +65,14 @@ def configure_node(cluster_changed, cluster_joined):
     status_set('maintenance', 'Configuring slurm-node')
 
     controller_data = cluster_changed.active_data
+
+    gres_context = get_inventory()
+    gres_context.update({key:controller_data[key] for key in ['slurm_user']})
+
     create_spool_dir(context=controller_data)
     render_munge_key(context=controller_data)
     render_slurm_config(context=controller_data)
+    render_gres_config(context=gres_context)
     # Make sure slurmd is running
     if not service_running(SLURMD_SERVICE):
         service_start(SLURMD_SERVICE)
