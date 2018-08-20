@@ -27,7 +27,7 @@ import charms.reactive.flags as flags
 
 
 
-flags.register_trigger(when='slurm-cluster.active.changed',
+flags.register_trigger(when='endpoint.slurm-cluster.active.changed',
                        clear_flag='slurm-node.configured')
 
 
